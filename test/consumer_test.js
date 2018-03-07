@@ -51,6 +51,7 @@ suite('PulseQueue', function() {
     const client = new Client({
       connectionString: PULSE_CONNECTION_STRING,
       retirementDelay: 50,
+      minReconnectionInterval: 20,
       monitor,
     });
     const got = [];
