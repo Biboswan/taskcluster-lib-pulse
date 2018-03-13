@@ -125,7 +125,7 @@ class PulseQueue extends events.EventEmitter {
       const amqp = conn.amqp;
       const channel = await amqp.createChannel();
       await channel.prefetch(this.options.prefetch);
-      const queueName = await await this._createAndBindQueue(channel);
+      const queueName = await this._createAndBindQueue(channel);
       this.channel = channel;
 
       // consider any errors on the channel to be potentially fatal to the
