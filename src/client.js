@@ -295,7 +295,7 @@ class Connection extends events.EventEmitter {
 
         amqp.on('error', err => {
           if (this.state === 'connected') {
-            this.debug(`error from aqplib connection: ${err}`);
+            this.debug(`error from amqplib connection: ${err}`);
             this.failed();
           }
         });
@@ -318,7 +318,7 @@ class Connection extends events.EventEmitter {
   }
 
   failed() {
-    if (this.state === 'retired' || this.state === 'finished') {
+    if (this.state === 'retiring' || this.state === 'finished') {
       // failure doesn't matter at this point
       return;
     }
