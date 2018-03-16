@@ -1,21 +1,18 @@
-const {ConsumerQueue} = require('consumerQueue');
 const events = require('events');
 const debug = require('debug');
-const assert = require('assert');
-const slugid = require('slugid');
 
 var clientcounter = 0;
 
 class MockClient extends events.EventEmitter {
-  constructor(monitor) {
+  constructor(monitor, amqpconn) {
     super();
     this.monitor = monitor;
     this.connections = [];
     this.connectionCounter = 0;
     this.namespace = `guest${clientcounter}`;
     this.running = true;
-    this.id = ++clientCounter;
-    this.activeConnection;
+    this.id = ++clientcounter;
+    this.amqpconn = amqpconn;
     this.recycle();
 
   }
@@ -88,7 +85,7 @@ class MockClient extends events.EventEmitter {
   }
 }
 
-exports.MockClient = MockClient;
+exports.Client = MockClient;
 
 class Connection extends events.EventEmitter {
   constructor(client, id) {
@@ -97,11 +94,12 @@ class Connection extends events.EventEmitter {
     this.client = client;
     this.id = id;
     this.state = 'waiting';
-    this.amqp = null;
+    this.amqp = client.amqpconn;
+    this.connect();
   }
 
-  connect() {
-    this.amqp = new MockAMQP(id);
+  async connect() {
+    this.amqp = this.client.amqpconn;
     this.state = 'connected';
     this.emit('connected');
   }
@@ -121,86 +119,3 @@ class Connection extends events.EventEmitter {
     this.client.recycle();
   }
 }
-
-class MockAMQP extends events.EventEmitter {
-  constructor() {
-    super();
-    this.channels = [];
-  }
-
-  createChannel() {
-    return new Promise(resolve => {
-      channels.unshift(new Channel(new Date().getTime().toString(), this));
-      return resolve(channels[0]);
-    });
-
-  }
-}
-
-class Channel extends events.EventEmitter {
-  constructor(id) {
-    super();
-
-    this.id = id;
-    this.queues = {};
-    this.prefetchcount = null;
-
-  }
-
-  assertQueue(queue = null, options = {}) {
-    if (!queue) {
-      queue = slugid.v4();
-    }
-    this.queues[queue] = new ConsumerQueue(queue, options);
-    
-    return Promise.resolve({
-      queue,
-      messageCount: 0,
-      consumerCount: 0,
-    });
-  }
-
-  bindQueue(queue, source, pattern) {
-    return new Promise((resolve, reject) => { 
-      if (this.queues.hasOwnProperty(queue)) {
-        this.queues[queue].subscribe(source, pattern);
-        resolve('ok');
-      } else {
-        reject('queue do not exist');
-      }
-    });
-  }
-
-  prefetch(count) {
-    this.prefetchcount = count;
-  }
-
-  publish(exchange, routingKey, content, options = {}) {
-    return new Promise((resolve, reject) => {
-      this.queues.map(queue => {
-        if (queue.exchanges.hasOwnProperty(exchange)) {
-          queue.exchanges[exchange].map(pattern => {
-
-            queue.enQueue({exchange, routingKey, content, options});
-          });
-        } 
-      });
-      resolve();
-    });
-  }
-
-  consume(queue, fn) {
-    if (this.queues.hasOwnProperty(queue)) {
-
-
-    }
-
-  }
-  ack(msg) {
-
-  }
-  close() {
-    this.emit('close');
-  }
-
-} 
