@@ -135,7 +135,7 @@ class Client extends events.EventEmitter {
     if (this.running) {
       const newConn = new Connection(this, ++this.connectionCounter);
 
-      // don't actually start connecting until at lesat minReconnectionInterval has passed
+      // don't actually start connecting until at least minReconnectionInterval has passed
       const earliestConnectionTime = this.lastConnectionTime + this.minReconnectionInterval;
       const now = new Date().getTime();
       setTimeout(() => {
